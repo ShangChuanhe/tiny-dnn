@@ -61,7 +61,7 @@ option(USE_IMAGE_API  "Build tiny-dnn with Image API support"              ON)
 option(USE_GEMMLOWP   "Build tiny-dnn with gemmlowp support"               OFF)
 
 option(BUILD_TESTS      "Set to ON to build tests"              OFF)
-option(BUILD_EXAMPLES   "Set to ON to build examples"           OFF)
+option(BUILD_EXAMPLES   "Set to ON to build examples"           ON)
 option(BUILD_DOCS       "Set to ON to build documentation"      OFF)
 option(BUILD_BENCHMARKS "Set to ON to build benchmarks"         OFF)
 option(COVERALLS        "Set to ON to build with code coverage" OFF)
@@ -246,6 +246,9 @@ message(STATUS "C++14 support has been enabled by default.")
 include(cotire)
 
 # Unix
+if(UNIX)
+  add_compile_options( -g )
+endif()
 if(CMAKE_COMPILER_IS_GNUCXX OR MINGW OR
    CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     include(CheckCXXCompilerFlag)

@@ -35,7 +35,8 @@ class Conv2dOp : public core::OpKernel {
     // call convolution algorithm depending
     // on the selected engine type
 
-    const core::backend_t engine = context.engine();
+    //const core::backend_t engine = context.engine();
+    const core::backend_t engine = core::backend_t::internal;
 
     if (engine == core::backend_t::internal) {
       kernels::conv2d_op_internal(in_data, W[0], bias[0], out_data, params,

@@ -13,11 +13,13 @@
 
 #include "tiny_dnn/tiny_dnn.h"
 
-void sample1_convnet(const string& data_dir = "../data");
-void sample2_mlp(const string& data_dir = "../data");
+using namespace tiny_dnn;
+
+void sample1_convnet(const std::string& data_dir = "/home/shangch/tiny-dnn/data");
+void sample2_mlp(const std::string& data_dir = "/home/shangch/tiny-dnn/data");
 void sample3_dae();
-void sample4_dropout(const string& data_dir = "../data");
-void sample5_unbalanced_training_data(const string& data_dir = "../data");
+void sample4_dropout(const std::string& data_dir = "/home/shangch/tiny-dnn/data");
+void sample5_unbalanced_training_data(const std::string& data_dir = "/home/shangch/tiny-dnn/data");
 void sample6_graph();
 
 int main(int argc, char** argv) {
@@ -108,7 +110,7 @@ static const bool connection[] = {
   auto on_enumerate_minibatch = [&]() { disp += minibatch_size; };
 
   // training
-  nn.train<mse>(optimizer, train_images, train_labels, minibatch_size, 20,
+  nn.train<mse>(optimizer, train_images, train_labels, minibatch_size, 1,
                 on_enumerate_minibatch, on_enumerate_epoch);
 
   std::cout << "end training." << std::endl;
@@ -121,9 +123,10 @@ static const bool connection[] = {
   ofs << nn;
 }
 
+#if 0
 ///////////////////////////////////////////////////////////////////////////////
 // learning 3-Layer Networks
-void sample2_mlp(const string& data_dir) {
+void sample2_mlp(const std::string& data_dir) {
   const size_t num_hidden_units = 500;
 
 #if defined(_MSC_VER) && _MSC_VER < 1800
@@ -206,7 +209,7 @@ void sample3_dae() {
 ///////////////////////////////////////////////////////////////////////////////
 // dropout-learning
 
-void sample4_dropout(const string& data_dir) {
+void sample4_dropout(const std::string& data_dir) {
   using network = network<sequential>;
   network nn;
   size_t input_dim    = 28 * 28;
@@ -275,7 +278,7 @@ void sample4_dropout(const string& data_dir) {
 ///////////////////////////////////////////////////////////////////////////////
 // learning unbalanced training data
 
-void sample5_unbalanced_training_data(const string& data_dir) {
+void sample5_unbalanced_training_data(const std::string& data_dir) {
   // keep the network relatively simple
   const size_t num_hidden_units = 20;
   auto nn_standard = make_mlp<tanh_layer>({28 * 28, num_hidden_units, 10});
@@ -392,3 +395,4 @@ void sample6_graph() {
   // relu({2,4,3} + {-1,2,-5}) = {1,6,0}
   std::cout << res[0] << "," << res[1] << "," << res[2] << std::endl;
 }
+#endif

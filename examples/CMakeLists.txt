@@ -18,6 +18,13 @@ target_link_libraries(benchmarks_all
     ${project_library_target_name} ${REQUIRED_LIBRARIES})
 cotire(benchmarks_all)
 
+#####################################
+add_executable(main main.cpp ${tiny_dnn_headers})
+target_link_libraries(main
+    ${project_library_target_name} ${REQUIRED_LIBRARIES})
+cotire(main)
+#####################################
+
 if(USE_SERIALIZER)
 
     add_executable(example_mnist_train mnist/train.cpp ${tiny_dnn_headers})
