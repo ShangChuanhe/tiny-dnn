@@ -7,6 +7,8 @@
 */
 #pragma once
 
+#include "../appmultiplier/appMultiplier.h"
+
 namespace tiny_dnn {
 namespace kernels {
 
@@ -52,7 +54,17 @@ inline void conv2d_op_internal(const tensor_t &in_data,
                    // should be optimized for small kernel(3x3,5x5)
                    for (size_t wy = 0; wy < kh; wy++) {    // NOLINT
                      for (size_t wx = 0; wx < kw; wx++) {  // NOLINT
-                       sum += pw_element[wx] * pin_element[wx * w_dilation];
+                       // Quantify
+                       int X = float2fix(pw_element[wx]);
+                       int Y = float2fix(pin_element[wx * w_dilation]);
+                       // Multiply
+                       int pdt = AM_EX53(X, Y);// approximate product
+                       // Anti-quantify
+                       float rst= fix2float(pdt);// result
+
+                       sum += static_cast<float_t>(rst);
+
+                       //sum += pw_element[wx] * pin_element[wx * w_dilation];
                      }
                      pw_element += kw;
                      pin_element += iw * h_dilation;

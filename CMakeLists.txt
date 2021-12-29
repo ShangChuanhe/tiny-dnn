@@ -239,16 +239,16 @@ endif()
 # Note: not working on CMake 2.8. We assume that user has
 #       a compiler with C++14 support.
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 message(STATUS "C++14 support has been enabled by default.")
 
 include(cotire)
 
 # Unix
-if(UNIX)
-  add_compile_options( -g )
-endif()
+#if(UNIX)
+#  add_compile_options( -g -std=c++17)
+#endif()
 if(CMAKE_COMPILER_IS_GNUCXX OR MINGW OR
    CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     include(CheckCXXCompilerFlag)
