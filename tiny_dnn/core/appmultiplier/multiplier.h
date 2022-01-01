@@ -1,13 +1,23 @@
 #pragma once
 
 #include <iostream>
+#include <cmath>
+#include <algorithm>
 #include <vector>
+#include <string>
 #include <tuple>
 
 #include "compressor.h"
 #include "algorithm.h"
 
+// the width of fraction bit
+#define FRACBIT 8
 
+int ** getLUT(const char s);
+
+auto ap_pdt = getLUT('a');
+
+// alias 'a'
 int AM_EX53(int multiplicand, int multiplier)
 {
   std::vector<int> X = dec2bin(multiplicand);
@@ -147,6 +157,7 @@ int AM_EX53(int multiplicand, int multiplier)
   return static_cast<int>(result);
 }
 
+// alias 'b'
 int AM_AC63(int multiplicand, int multiplier)
 {
   std::vector<int> X = dec2bin(multiplicand);
@@ -345,4 +356,77 @@ int AM_AC63(int multiplicand, int multiplier)
   return static_cast<int>(result);
 }
 
+/*
+std::vector<std::vector<int>> getLUT(const char s)
+{
+  std::vector<std::vector<int>> LUT;
+  for(int X = 0; X < std::pow(2, FRACBIT) + 1; X++)
+  {
+    std::vector<int> pdt(std::pow(2, FRACBIT) + 1,0);// product
+
+    for(int Y = 0; Y < std::pow(2, FRACBIT) + 1; Y++)
+    {
+      int rst = 0;// result
+
+      switch(s)
+      {
+        case 'a':
+          rst = AM_EX53(X, Y);
+          break;
+        case 'b':
+          rst = AM_AC63(X, Y);
+          break;
+
+        default:
+          std::cout << "error: No matching multiplier!!\n";
+          return LUT;
+          break;
+      }
+      pdt[Y] = rst;
+    }
+    LUT.emplace_back(pdt);
+  }
+  return LUT;
+}
+*/
+
+
+int ** getLUT(const char s)
+{
+  
+  int **LUT = nullptr;
+  int LUTsize = std::pow(2, FRACBIT) + 1;
+
+  LUT = new int*[LUTsize];
+  for(int i = 0; i < LUTsize; i++)
+  {
+    LUT[i] = new int[LUTsize];
+  }
+  
+  //std::vector<std::vector<int>> LUT;
+  for(int X = 0; X < LUTsize; X++)
+  {
+    for(int Y = 0; Y < LUTsize; Y++)
+    {
+      int rst = 0;// result
+
+      switch(s)
+      {
+        case 'a':
+          rst = AM_EX53(X, Y);
+          break;
+        case 'b':
+          rst = AM_AC63(X, Y);
+          break;
+
+        default:
+          std::cout << "error: No matching multiplier!!\n";
+          return LUT;
+          break;
+      }
+      LUT[X][Y] = rst;
+    }
+  }
+  return LUT;
+}
 
