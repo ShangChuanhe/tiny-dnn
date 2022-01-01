@@ -7,7 +7,11 @@
 */
 #pragma once
 
+#include <iostream>
+#include <vector>
+#include <cmath>
 #include "../appmultiplier/appMultiplier.h"
+
 
 namespace tiny_dnn {
 namespace kernels {
@@ -18,6 +22,9 @@ inline void conv2d_op_internal(const tensor_t &in_data,
                                tensor_t &out_data,
                                const core::conv_params &params,
                                const bool parallelize) {
+  //auto ap_pdt = getLUT('a'); // approximate product array
+  double macry = 1 / std::pow(2, FRACBIT-1); //the most accuracy for 7 bit fraction
+
   for_(parallelize, 0u, in_data.size(),
        [&](const blocked_range &r) {
          size_t out_area    = params.out.area();
@@ -54,16 +61,128 @@ inline void conv2d_op_internal(const tensor_t &in_data,
                    // should be optimized for small kernel(3x3,5x5)
                    for (size_t wy = 0; wy < kh; wy++) {    // NOLINT
                      for (size_t wx = 0; wx < kw; wx++) {  // NOLINT
+                       //#if 0
                        // Quantify
-                       int X = float2fix(pw_element[wx]);
-                       int Y = float2fix(pin_element[wx * w_dilation]);
+                       int X = std::round(std::abs(pw_element[wx]) / macry);
+                       int Y = std::round(std::abs(pin_element[wx * w_dilation]) / macry);
+
+                       //X = X > std::pow(2, FRACBIT) ? std::pow(2, FRACBIT) : X;
+                       //Y = Y > std::pow(2, FRACBIT) ? std::pow(2, FRACBIT) : Y;
+                       /*
+                       if(X > std::pow(2, FRACBIT))
+                       {
+                         std::cout << "X > 2^FRACBIT: " << X << std::endl;
+                         X = std::pow(2, FRACBIT);
+                       }
+                       if(Y > std::pow(2, FRACBIT))
+                       {
+                         std::cout << "Y > 2^FRACBIT: " << Y << std::endl;
+                         Y = std::pow(2, FRACBIT);
+                       }
+                       */
+                       
+                       //std::cout << "pw: " << pw_element[wx] << std::endl;
+                       //std::cout << "pin: " << pin_element[wx * w_dilation] << std::endl;
+                       //std::cout << "non_norm_pw: " << X << std::endl;
+                       //std::cout << "non_norm_pin: " << Y << std::endl;
+
                        // Multiply
-                       int pdt = AM_EX53(X, Y);// approximate product
+                       int pdt = ap_pdt[X][Y];// approximate product
                        // Anti-quantify
-                       float rst= fix2float(pdt);// result
+                       float rst= static_cast<double>(pdt) * static_cast<double>(std::pow(macry, 2));// result
+
+                       //std::cout << "non_norm_pdt: " << static_cast<double>(pdt) << std::endl;
+                       //std::cout << "pdt: " << rst << std::endl;
+                       //std::cout << static_cast<float_t>(rst) - std::abs(pw_element[wx] * pin_element[wx * w_dilation]) << "\n\n";
+                       /*
+                       if(std::abs((static_cast<float_t>(rst) - std::abs(pw_element[wx] * pin_element[wx * w_dilation]))) > 0.01)
+                       {
+                         std::cout << "error!!!" << std::endl;
+                       }
+                       */
+
+                       if(pw_element[wx] < 0)
+                       {
+                         if(pin_element[wx * w_dilation] > 0)
+                         {
+                           rst *= -1;
+                         }
+                       }
+                       else
+                       {
+                         if(pin_element[wx * w_dilation] < 0)
+                         {
+                           rst *= -1;
+                         }
+                       }
+
+
+                       /*
+                       if(std::abs(std::abs(static_cast<float_t>(rst)) - std::abs((pw_element[wx] * pin_element[wx * w_dilation]))) > 0.01)
+                       {
+                         std::cout << "pw * pin: " << pw_element[wx] << " * " << pin_element[wx * w_dilation] << " = " << pw_element[wx] * pin_element[wx * w_dilation] << std::endl;
+                         std::cout << "pdt: " << pdt << std::endl;
+                         std::cout << "norm_X * Y: " << static_cast<float_t>(rst) << std::endl;
+                         std::cout << "error!!!" << std::endl;
+                       }
+                       */
 
                        sum += static_cast<float_t>(rst);
 
+                       //#endif
+                       #if 0
+                       float_t x = pw_element[wx];
+                       float_t y = pin_element[wx * w_dilation];
+
+                       unsigned int* ptr_x = (unsigned int*)&x;
+                       unsigned int* ptr_y = (unsigned int*)&y;
+
+                       int sign_x = *ptr_x >> 31;
+                       int sign_y = *ptr_y >> 31;
+
+                       bool sign = sign_x ^ sign_y ? true : false;
+
+                       //std::cout << "sign: " << sign << std::endl;
+
+                       // Quantify
+                       int X = std::round(std::abs(x) / macry);
+                       int Y = std::round(std::abs(y) / macry);
+                       
+                       X = X > std::pow(2, FRACBIT) ? std::pow(2, FRACBIT) : X;
+                       Y = Y > std::pow(2, FRACBIT) ? std::pow(2, FRACBIT) : Y;
+                       
+
+                       //std::cout << "pw: " << x << std::endl;
+                       //std::cout << "pin: " << y << std::endl;
+                       //std::cout << "non_norm_pw: " << X << std::endl;
+                       //std::cout << "non_norm_pin: " << Y << std::endl;
+
+                       // Multiply
+                       int pdt = ap_pdt[X][Y];// approximate product
+                       // Anti-quantify
+                       float rst= static_cast<double>(pdt) * static_cast<double>(std::pow(macry, 2));// result
+
+                       //std::cout << "non_norm_pdt: " << static_cast<double>(pdt) << std::endl;
+                       //std::cout << "pdt: " << rst << std::endl;
+                       //std::cout << static_cast<float_t>(rst) - std::abs(x * y) << "\n\n";
+                       //std::cout << "rst: " << rst << std::endl;
+
+                       rst *= sign ? -1 : 1;
+                       
+                       /*
+                       if(std::abs(std::abs(static_cast<float_t>(rst)) - std::abs(x * y)) > 0.01)
+                       {
+                         std::cout << "pw * pin: " << x << " * " << y << " = " << x * y << std::endl;
+                         std::cout << "X * Y: " << X << " * " << Y << " = " << X * Y << std::endl;
+                         std::cout << "pdt: " << pdt << std::endl;
+                         std::cout << "norm_X * Y: " << static_cast<float_t>(rst) << std::endl;
+                         std::cout << "error!!!" << std::endl;
+                         std::exit(1);
+                       }
+                       */
+
+                       sum += static_cast<float_t>(rst);
+                       #endif
                        //sum += pw_element[wx] * pin_element[wx * w_dilation];
                      }
                      pw_element += kw;
