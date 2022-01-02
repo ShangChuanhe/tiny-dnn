@@ -8,6 +8,7 @@
 #pragma once
 
 #include "tiny_dnn/core/params/fully_params.h"
+#include "../appmultiplier/appMultiplier.h"
 
 namespace tiny_dnn {
 namespace kernels {
@@ -18,6 +19,8 @@ inline void fully_connected_op_internal(const tensor_t &in_data,
                                         tensor_t &out_data,
                                         const core::fully_params &params,
                                         const bool layer_parallelize) {
+  float_t Wk = 1 / std::pow(2, FRACBIT); //the scaling factor Wk
+                                         //
   for_i(layer_parallelize, in_data.size(), [&](size_t sample) {
     const vec_t &in = in_data[sample];
     vec_t &out      = out_data[sample];
@@ -25,7 +28,8 @@ inline void fully_connected_op_internal(const tensor_t &in_data,
     for (size_t i = 0; i < params.out_size_; i++) {
       out[i] = float_t{0};
       for (size_t c = 0; c < params.in_size_; c++) {
-        out[i] += W[c * params.out_size_ + i] * in[c];
+        //out[i] += W[c * params.out_size_ + i] * in[c];
+        out[i] += appMulti(W[c * params.out_size_ + i], in[c], Wk);
       }
 
       if (params.has_bias_) {

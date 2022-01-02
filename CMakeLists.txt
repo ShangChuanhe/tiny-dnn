@@ -61,7 +61,7 @@ option(USE_IMAGE_API  "Build tiny-dnn with Image API support"              ON)
 option(USE_GEMMLOWP   "Build tiny-dnn with gemmlowp support"               OFF)
 
 option(BUILD_TESTS      "Set to ON to build tests"              OFF)
-option(BUILD_EXAMPLES   "Set to ON to build examples"           OFF)
+option(BUILD_EXAMPLES   "Set to ON to build examples"           ON)
 option(BUILD_DOCS       "Set to ON to build documentation"      OFF)
 option(BUILD_BENCHMARKS "Set to ON to build benchmarks"         OFF)
 option(COVERALLS        "Set to ON to build with code coverage" OFF)
@@ -239,7 +239,7 @@ endif()
 # Note: not working on CMake 2.8. We assume that user has
 #       a compiler with C++14 support.
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 message(STATUS "C++14 support has been enabled by default.")
 
@@ -272,7 +272,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR MINGW OR
 
     # include extra flags to the compiler
     # TODO: add info about those flags.
-    set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} -Wall -Wpedantic -Wno-narrowing -Wno-deprecated")
+    set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} -g -Wall -Wpedantic -Wno-narrowing -Wno-deprecated")
     set(EXTRA_C_FLAGS_RELEASE "${EXTRA_C_FLAGS_RELEASE} -O3")
     set(EXTRA_C_FLAGS_DEBUG   "${EXTRA_C_FLAGS_DEBUG} -g3 -pthread")
 elseif(MSVC)

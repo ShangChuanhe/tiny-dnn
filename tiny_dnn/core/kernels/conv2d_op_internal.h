@@ -7,6 +7,11 @@
 */
 #pragma once
 
+#include <iostream>
+#include <vector>
+#include <cmath>
+#include "../appmultiplier/appMultiplier.h"
+
 namespace tiny_dnn {
 namespace kernels {
 
@@ -16,6 +21,8 @@ inline void conv2d_op_internal(const tensor_t &in_data,
                                tensor_t &out_data,
                                const core::conv_params &params,
                                const bool parallelize) {
+  float_t Wk = 1 / std::pow(2, FRACBIT); //the scaling factor Wk
+
   for_(parallelize, 0u, in_data.size(),
        [&](const blocked_range &r) {
          size_t out_area    = params.out.area();
@@ -52,7 +59,41 @@ inline void conv2d_op_internal(const tensor_t &in_data,
                    // should be optimized for small kernel(3x3,5x5)
                    for (size_t wy = 0; wy < kh; wy++) {    // NOLINT
                      for (size_t wx = 0; wx < kw; wx++) {  // NOLINT
-                       sum += pw_element[wx] * pin_element[wx * w_dilation];
+                       /*
+                       float_t x = pw_element[wx];
+                       float_t y = pin_element[wx * w_dilation];
+
+                       // Quantify
+                       int X = std::round(std::abs(x) / Wk);
+                       int Y = std::round(std::abs(y) / Wk);
+
+                       X = X > std::pow(2, FRACBIT)-1 ? std::pow(2, FRACBIT)-1 : X;
+                       Y = Y > std::pow(2, FRACBIT)-1 ? std::pow(2, FRACBIT)-1 : Y;
+
+                       // Multiply
+                       int pdt = ap_pdt[X][Y];// approximate product
+
+                       // Anti-quantify
+                       float_t rst= static_cast<float_t>(pdt) * static_cast<float_t>(std::pow(Wk, 2));// result
+
+                       if(pw_element[wx] < 0)
+                       {
+                         if(pin_element[wx * w_dilation] > 0)
+                         {
+                           rst *= -1;
+                         }
+                       }
+                       else
+                       {
+                         if(pin_element[wx * w_dilation] < 0)
+                         {
+                           rst *= -1;
+                         }
+                       }
+                       sum += rst;
+*/
+                       //sum += pw_element[wx] * pin_element[wx * w_dilation];
+                       sum += appMulti(pw_element[wx], pin_element[wx * w_dilation], Wk);
                      }
                      pw_element += kw;
                      pin_element += iw * h_dilation;
